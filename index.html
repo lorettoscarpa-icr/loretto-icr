@@ -1757,7 +1757,7 @@ function iniciarSync(){
   const { DATA_DOC, onSnapshot } = window._FB;
   setSyncStatus('saving');
   _unsubscribe = onSnapshot(DATA_DOC, snap => {
-    if(!snap.exists()){ setSyncStatus('saved'); calcular(); return; }
+    if(!snap.exists){ setSyncStatus('saved'); calcular(); return; }
     const p = snap.data();
     if(p.ts && p.ts === window._lastSavedTs) return; // mudança própria
     if(p.rb)      document.getElementById('rbInp').value  = p.rb;
