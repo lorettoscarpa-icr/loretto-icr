@@ -6,7 +6,35 @@
 <title>Loretto Scarpa — ICR Control</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<!-- Firebase -->
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey:            "AIzaSyCogQoTSULCdC1JhTb0IUilWAIA1itBJ8U",
+  authDomain:        "loretto-scarpa-l-icr.firebaseapp.com",
+  projectId:         "loretto-scarpa-l-icr",
+  storageBucket:     "loretto-scarpa-l-icr.firebasestorage.app",
+  messagingSenderId: "428188657366",
+  appId:             "1:428188657366:web:f32af8fb06d254ee83cb77"
+};
+firebase.initializeApp(firebaseConfig);
+const _auth = firebase.auth();
+const _db   = firebase.firestore();
+const _DATA_DOC = _db.collection('loretto').doc('icr_2026');
+window._FB = {
+  auth: _auth,
+  db:   _db,
+  DATA_DOC: _DATA_DOC,
+  signInWithEmailAndPassword: (auth, email, pass) => auth.signInWithEmailAndPassword(email, pass),
+  signOut: (auth) => auth.signOut(),
+  onAuthStateChanged: (auth, cb) => auth.onAuthStateChanged(cb),
+  setDoc: (ref, data) => ref.set(data),
+  onSnapshot: (ref, cb, errCb) => ref.onSnapshot(cb, errCb),
+  getDoc: (ref) => ref.get()
+};
+</script>
 <style>
 /* ══ LOGIN SCREEN ══ */
 #loginScreen{
@@ -83,6 +111,7 @@
 .sync-dot.syncing{background:#b45309;box-shadow:0 0 5px rgba(180,83,9,.4);animation:blink 1s ease infinite;}
 .sync-dot.error{background:#dc2626;box-shadow:0 0 5px rgba(220,38,38,.4);}
 </style>
+<style>
 /* ══════════════ NOVOS RECURSOS ══════════════ */
 
 /* RB Realizada */
@@ -1758,32 +1787,6 @@ window.addEventListener('DOMContentLoaded',()=>{
     });
   },100);
 });
-</script>
-<script type="module">
-import { initializeApp }                        from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword,
-         signOut, onAuthStateChanged }           from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getFirestore, doc, setDoc,
-         onSnapshot, getDoc }                    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-
-const firebaseConfig = {
-  apiKey:            "AIzaSyCogQoTSULCdC1JhTb0IUilWAIA1itBJ8U",
-  authDomain:        "loretto-scarpa-l-icr.firebaseapp.com",
-  projectId:         "loretto-scarpa-l-icr",
-  storageBucket:     "loretto-scarpa-l-icr.firebasestorage.app",
-  messagingSenderId: "428188657366",
-  appId:             "1:428188657366:web:f32af8fb06d254ee83cb77"
-};
-
-const app  = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db   = getFirestore(app);
-
-// ── DOC de dados compartilhados (um doc por empresa) ──
-const DATA_DOC = doc(db, 'loretto', 'icr_2026');
-
-// ── Expor funções ao escopo global para o restante do JS ──
-window._FB = { auth, db, DATA_DOC, signInWithEmailAndPassword, signOut, onAuthStateChanged, setDoc, onSnapshot, getDoc };
 </script>
 </body>
 </html>
