@@ -395,7 +395,7 @@ header{padding:32px 0 0;margin-bottom:32px;}
 .mlbl{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--mu);padding:0 5px;letter-spacing:.1em;text-transform:uppercase;}
 .mbtn{font-family:'DM Mono',monospace;font-size:.65rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:5px 13px;border-radius:5px;border:1px solid transparent;cursor:pointer;background:transparent;transition:all .18s;white-space:nowrap;}
 .mbtn.mpad{color:var(--txt2);}
-.mbtn.mpad.on{color:var(--txt);background:#fff;border-color:var(--b1);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+.mbtn.mpad.on{color:var(--txt);background:var(--s3);border-color:var(--b2);box-shadow:0 1px 3px var(--shadow-sm);}
 .mbtn.m15{color:var(--yw);}
 .mbtn.m15.on,.mbtn.m15:hover{background:rgba(180,83,9,.07);border-color:rgba(180,83,9,.22);}
 .mbtn.m20{color:var(--gr);}
@@ -421,8 +421,8 @@ header{padding:32px 0 0;margin-bottom:32px;}
 .hinput::placeholder{color:var(--mu);}
 
 /* mês grid */
-.mgrid{display:grid;grid-template-columns:repeat(6,auto);justify-content:start;gap:3px;margin-top:8px;}
-.mb{font-family:'DM Mono',monospace;font-size:.65rem;font-weight:600;letter-spacing:.05em;padding:4px 9px;border-radius:4px;border:1px solid var(--b1);background:transparent;color:var(--txt2);cursor:pointer;transition:all .16s;white-space:nowrap;}
+.mgrid{display:grid;grid-template-columns:repeat(6,auto);justify-content:start;gap:5px;margin-top:10px;}
+.mb{font-family:'DM Mono',monospace;font-size:.72rem;font-weight:600;letter-spacing:.05em;padding:7px 14px;border-radius:6px;border:1px solid var(--b1);background:transparent;color:var(--txt2);cursor:pointer;transition:all .16s;white-space:nowrap;min-width:52px;text-align:center;}
 .mb:hover{color:var(--bl);border-color:rgba(37,99,235,.28);background:rgba(37,99,235,.04);}
 .mb.on{color:var(--bl);border-color:rgba(37,99,235,.35);background:rgba(37,99,235,.08);font-weight:700;}
 .mb.crit{color:var(--rd);border-color:rgba(255,53,88,.22);}
@@ -694,9 +694,16 @@ footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--b0);display:f
       <button class="btn-fechar" onclick="fecharMes()">✓ Fechar Mês</button>
       <div class="meta-bar">
         <span class="mlbl">Meta</span>
-        <button class="mbtn mpad on" id="bPad" onclick="apMeta('pad')">Padrão</button>
-        <button class="mbtn m15"     id="b15"  onclick="apMeta('m15')">15% lucro</button>
-        <button class="mbtn m20"     id="b20"  onclick="apMeta('m20')">20% lucro</button>
+        <button class="mbtn mpad on" id="bPad" onclick="apMeta('pad')" style="display:flex;align-items:center;gap:3px;">
+          <input id="metaPadPct" type="text" inputmode="decimal" value="0"
+            style="width:28px;background:transparent;border:none;outline:none;font-family:'DM Mono',monospace;font-size:.65rem;font-weight:700;color:var(--txt);text-align:center;cursor:text;padding:0;"
+            onclick="event.stopPropagation();this.select()"
+            oninput="atualizarMetaPad()"
+            onblur="fmtMetaPad(this)">
+          <span style="font-size:.6rem;opacity:.8">% lucro</span>
+        </button>
+        <button class="mbtn m15" id="b15" onclick="apMeta('m15')">15% lucro</button>
+        <button class="mbtn m20" id="b20" onclick="apMeta('m20')">20% lucro</button>
       </div>
       <button class="btn-lmp" onclick="limpar()">↺ Limpar</button>
       <span class="tag tc">ICR</span>
@@ -1929,14 +1936,29 @@ function aplicarTema(){
   }
 }
 
-// ══ LUCRO PROJETADO — respeita a meta ativa, base = RB líquida (após DAS) ══
+// ══ LUCRO PROJETADO — respeita a meta ativa, base = RL ══
+function getMetaPadPct(){
+  return parseFloat((document.getElementById('metaPadPct')?.value||'0').replace(',','.'))||0;
+}
+function atualizarMetaPad(){
+  if(metaAtiva==='pad'){ calcular(); autoSave(); }
+}
+function fmtMetaPad(el){
+  const n = parseFloat(el.value.replace(',','.'))||0;
+  el.value = n % 1 === 0 ? n.toFixed(0) : n.toFixed(1);
+  if(metaAtiva==='pad'){ calcular(); autoSave(); }
+}
+
 function lucroMeta(){
-  if(RB <= 0) return {lucro:0, pct:0};
-  const base = RB_LIQ > 0 ? RB_LIQ : RB;
+  const base = RL();
+  if(base <= 0) return {lucro:0, pct:0};
   if(metaAtiva === 'm15') return {lucro: base * 0.15, pct: 15};
   if(metaAtiva === 'm20') return {lucro: base * 0.20, pct: 20};
+  // Padrão: usa % customizado se > 0, senão cálculo real
+  const padPct = getMetaPadPct();
+  if(padPct > 0) return {lucro: base * padPct / 100, pct: padPct};
   const tt = totalICR();
-  return {lucro: base - tt, pct: (base - tt) / base * 100};
+  return {lucro: base - tt, pct: base > 0 ? (base - tt) / base * 100 : 0};
 }
 
 // ══════════════════════════════════════════
@@ -2010,6 +2032,7 @@ async function salvar(){
     antecip:   document.getElementById('antecipInp').value||'',
     dasPct:    document.getElementById('dasPctInp').value||'6',
     maqPct:    document.getElementById('maqPctInp').value||'2.5',
+    metaPadPct:document.getElementById('metaPadPct').value||'0',
     rbReal:    document.getElementById('rbReal').value,
     real:      {...REAL}, tc:{...TC}, obs:{...OBS}, pct:{...PCT_CUSTOM},
     meta:      metaAtiva, mesSel,
@@ -2039,9 +2062,10 @@ function iniciarSync(){
     const p = snap.data();
     if(p.ts && p.ts === window._lastSavedTs) return; // mudança própria
     if(p.rb)      setRbInpVal(p.rb);
-    if(p.antecip !== undefined) document.getElementById('antecipInp').value = p.antecip;
-    if(p.dasPct  !== undefined) document.getElementById('dasPctInp').value  = p.dasPct;
-    if(p.maqPct  !== undefined) document.getElementById('maqPctInp').value  = p.maqPct;
+    if(p.antecip  !== undefined) document.getElementById('antecipInp').value  = p.antecip;
+    if(p.dasPct   !== undefined) document.getElementById('dasPctInp').value   = p.dasPct;
+    if(p.maqPct   !== undefined) document.getElementById('maqPctInp').value   = p.maqPct;
+    if(p.metaPadPct !== undefined) document.getElementById('metaPadPct').value = p.metaPadPct;
     if(p.rbReal)  document.getElementById('rbReal').value = p.rbReal;
     if(p.real)    { Object.keys(REAL).forEach(k=>delete REAL[k]); Object.assign(REAL,p.real); }
     if(p.tc)      { Object.keys(TC).forEach(k=>delete TC[k]);     Object.assign(TC,p.tc);     }
@@ -2077,6 +2101,7 @@ function limpar(){
   document.getElementById('antecipInp').value='';
   document.getElementById('dasPctInp').value='6';
   document.getElementById('maqPctInp').value='2.5';
+  document.getElementById('metaPadPct').value='0';
   document.getElementById('rbDelta').textContent='—';
   document.getElementById('rbDelta').className='rb-real-delta neu';
   document.getElementById('diasAtual').value='0';
